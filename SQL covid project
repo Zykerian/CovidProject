@@ -1,0 +1,91 @@
+--SELECT *
+--from master..CovidVAX
+--order by 3,4
+
+select * 
+FROM master..CovidDeath
+where continent is not NULL
+order by 3,4
+
+-- selecting the data we are going to use
+
+select location, date, total_cases, new_cases,total_deaths, population
+FROM master..CovidDeath
+order by 1,2 
+
+-- Looking at total cases vs total deaths
+-- Shows likelihood of dying if you contract covid in your country
+SELECT location, date, total_cases, total_deaths, 
+       (CONVERT(FLOAT, total_deaths) / total_cases) * 100 AS Deathpercentage
+FROM master..CovidDeath
+where location like '%states%'
+ORDER BY 1, 2;
+
+-- Looking at total cases vs total deaths
+-- Shows what percentage of the population got covid
+SELECT location, date, total_cases, population, 
+       (CONVERT(FLOAT, population) / total_cases) * 100 AS Deathpercentage
+FROM master..CovidDeath
+--where location like '%states%'
+ORDER BY 1, 2;
+
+-- Looking at Countries with Highest Infection compared to population
+--where location like '%states%'
+
+SELECT location, population, MAX(total_cases) AS HighestInfectionCount, 
+       (CONVERT(FLOAT, population) / MAX(total_cases)) * 100 AS DeathPercentage
+FROM master..CovidDeath
+GROUP BY location, population
+ORDER BY location, population DESC;
+
+
+
+-- Let's break thingsdown by continent
+
+
+SELECT continent, MAX(CAST(total_deaths AS INT)) as TotalDeathCount
+FROM master..CovidDeath
+where continent is not NULL
+GROUP BY continent
+ORDER BY TotalDeathCount DESC;
+
+-- Showing continents with the highest death count per population 
+
+SELECT location, MAX(CAST(total_deaths AS INT)) as TotalDeathCount
+FROM master..CovidDeath
+where continent is not NULL
+GROUP BY location
+ORDER BY TotalDeathCount DESC;
+
+-- GLobal Numbers
+
+SELECT date, 
+       SUM(CAST(new_cases AS INT)) AS TotalNewCases, 
+       SUM(CAST(total_cases AS INT)) AS TotalTotalCases, 
+       CASE
+           WHEN SUM(CAST(new_cases AS INT)) = 0 THEN NULL
+           ELSE (SUM(CAST(new_deaths AS INT)) / SUM(CAST(new_cases AS INT))) * 100
+       END AS DeathPercentage
+FROM master..CovidDeath
+WHERE continent IS NOT NULL
+GROUP BY date
+ORDER BY date;
+
+--Looking at total population vs vaccination
+
+
+SELECT dea.continent, dea.location, dea.DATE, dea.population, vax.new_vaccinations
+FROM master..CovidDeath AS dea
+JOIN master..CovidVAX AS vax
+ON dea.location = vax.location 
+AND dea.date = vax.date
+ORDER BY  dea.location, dea.DATE;
+
+
+
+
+
+
+
+
+
